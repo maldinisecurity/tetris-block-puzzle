@@ -3,6 +3,7 @@ const boardCtx = boardCanvas.getContext("2d");
 const nextCanvas = document.getElementById("next");
 const nextCtx = nextCanvas.getContext("2d");
 const bodyEl = document.body;
+const boardPanelEl = document.querySelector(".board-panel");
 
 const scoreEl = document.getElementById("score");
 const linesEl = document.getElementById("lines");
@@ -292,7 +293,49 @@ function hideOverlay() {
 }
 
 function isMobileViewport() {
-  return window.matchMedia("(max-width: 820px)").matches;
+  return (
+    window.matchMedia("(max-width: 820px)").matches ||
+    window.matchMedia("(max-width: 900px) and (pointer: coarse)").matches
+  );
+}
+
+async function requestMobileFullscreen() {
+  if (!isMobileViewport()) {
+    return;
+  }
+
+  const target = boardPanelEl;
+  if (!target) {
+    return;
+  }
+
+  try {
+    if (target.requestFullscreen) {
+      await target.requestFullscreen();
+      return;
+    }
+
+    if (target.webkitRequestFullscreen) {
+      target.webkitRequestFullscreen();
+    }
+  } catch {
+    // Keep the CSS fullscreen fallback active when the browser rejects the request.
+  }
+}
+
+async function exitMobileFullscreen() {
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  } catch {
+    // Ignore exit failures and still restore the inline layout.
+  }
 }
 
 function enterMobilePlayMode() {
@@ -300,10 +343,12 @@ function enterMobilePlayMode() {
     return;
   }
   bodyEl.classList.add("mobile-play-active");
+  requestMobileFullscreen();
 }
 
 function exitMobilePlayMode() {
   bodyEl.classList.remove("mobile-play-active");
+  exitMobileFullscreen();
 }
 
 function movePiece(direction) {
@@ -645,6 +690,12 @@ boardCanvas.addEventListener("pointercancel", finishGesture);
 
 window.addEventListener("resize", () => {
   if (!isMobileViewport()) {
+    exitMobilePlayMode();
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && bodyEl.classList.contains("mobile-play-active") && !isMobileViewport()) {
     exitMobilePlayMode();
   }
 });
