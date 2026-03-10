@@ -7,6 +7,10 @@ const scoreEl = document.getElementById("score");
 const linesEl = document.getElementById("lines");
 const levelEl = document.getElementById("level");
 const bestEl = document.getElementById("best");
+const mobileScoreEl = document.getElementById("mobile-score");
+const mobileLinesEl = document.getElementById("mobile-lines");
+const mobileLevelEl = document.getElementById("mobile-level");
+const mobileBestEl = document.getElementById("mobile-best");
 const msgEl = document.getElementById("msg");
 const speedLabelEl = document.getElementById("speed-label");
 const overlayEl = document.getElementById("overlay");
@@ -88,6 +92,7 @@ let flashTimer = 0;
 let touchRepeat = null;
 
 bestEl.textContent = String(best);
+mobileBestEl.textContent = String(best);
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -239,6 +244,10 @@ function syncHud() {
   linesEl.textContent = String(lines);
   levelEl.textContent = String(level);
   bestEl.textContent = String(best);
+  mobileScoreEl.textContent = String(score);
+  mobileLinesEl.textContent = String(lines);
+  mobileLevelEl.textContent = String(level);
+  mobileBestEl.textContent = String(best);
   speedLabelEl.textContent = `${(BASE_DROP_MS / getDropInterval()).toFixed(2)}x`;
 }
 

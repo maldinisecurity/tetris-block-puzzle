@@ -29,13 +29,38 @@
           </div>
         </div>
 
-        <div class="touch-controls" aria-label="Touch controls">
-          <button data-action="left" type="button">Left</button>
-          <button data-action="rotate" type="button">Rotate</button>
-          <button data-action="right" type="button">Right</button>
-          <button data-action="down" type="button">Soft Drop</button>
-          <button data-action="drop" type="button">Hard Drop</button>
-        </div>
+        <section class="mobile-strip">
+          <div class="mobile-stats" aria-label="Game stats">
+            <article class="mini-stat">
+              <span>Score</span>
+              <strong id="mobile-score">0</strong>
+            </article>
+            <article class="mini-stat">
+              <span>Lines</span>
+              <strong id="mobile-lines">0</strong>
+            </article>
+            <article class="mini-stat">
+              <span>Level</span>
+              <strong id="mobile-level">1</strong>
+            </article>
+            <article class="mini-stat">
+              <span>Best</span>
+              <strong id="mobile-best">0</strong>
+            </article>
+          </div>
+
+          <div class="touch-controls" aria-label="Touch controls">
+            <div class="touch-pad">
+              <button class="control-move" data-action="left" type="button" aria-label="Move left">Left</button>
+              <button class="control-rotate" data-action="rotate" type="button" aria-label="Rotate piece">Rotate</button>
+              <button class="control-move" data-action="right" type="button" aria-label="Move right">Right</button>
+            </div>
+            <div class="touch-actions">
+              <button class="control-soft" data-action="down" type="button">Soft Drop</button>
+              <button class="control-hard" data-action="drop" type="button">Hard Drop</button>
+            </div>
+          </div>
+        </section>
       </section>
 
       <aside class="side-panel">
@@ -68,11 +93,11 @@
 
         <section class="info-panel">
           <p id="msg">Arrow keys move, Up rotates, Space hard drops.</p>
-          <ul>
-            <li>Clear multiple lines for combo scoring.</li>
-            <li>Ghost piece shows the landing position.</li>
-            <li>Touch controls appear on smaller screens.</li>
-          </ul>
+          <div class="tips">
+            <span>Ghost piece shows the landing position.</span>
+            <span>Clear multiple lines for combo scoring.</span>
+            <span>Touch controls appear on smaller screens.</span>
+          </div>
         </section>
       </aside>
     </main>

@@ -81,7 +81,10 @@ h1 {
 }
 
 .button-row,
-.touch-controls {
+.touch-controls,
+.touch-pad,
+.touch-actions,
+.mobile-stats {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -97,6 +100,19 @@ button {
   color: #06111d;
   background: linear-gradient(135deg, #8ef5ff, #43f0d0);
   box-shadow: 0 12px 24px rgba(67, 240, 208, 0.25);
+}
+
+button:hover {
+  filter: brightness(1.03);
+}
+
+button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 #pause-btn {
@@ -156,13 +172,79 @@ canvas#g {
   display: none;
 }
 
+.mobile-strip {
+  display: none;
+  gap: 12px;
+}
+
+.mobile-stats {
+  display: none;
+}
+
+.mini-stat {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.mini-stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.mini-stat strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+
 .touch-controls {
   justify-content: center;
 }
 
+.touch-pad,
+.touch-actions {
+  width: 100%;
+}
+
+.touch-pad {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.touch-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
 .touch-controls button {
-  flex: 1 1 120px;
   min-width: 0;
+}
+
+.control-move,
+.control-rotate,
+.control-soft {
+  min-height: 52px;
+}
+
+.control-rotate {
+  background: linear-gradient(135deg, #b6f88e, #43f0d0);
+}
+
+.control-soft {
+  background: linear-gradient(135deg, #9ec7ff, #69a8ff);
+}
+
+.control-hard {
+  min-height: 56px;
+  background: linear-gradient(135deg, #ffafcb, #fb6aa0);
+  color: #2b0222;
 }
 
 .side-panel {
@@ -234,18 +316,22 @@ canvas#g {
   font-weight: 700;
 }
 
-.info-panel ul {
-  margin: 0;
-  padding-left: 18px;
+.tips {
+  display: grid;
+  gap: 8px;
   color: var(--muted);
+  font-size: 0.96rem;
 }
 
-.info-panel li + li {
-  margin-top: 8px;
+.tips span {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(191, 219, 254, 0.08);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 @media (min-width: 821px) {
-  .touch-controls {
+  .mobile-strip {
     display: none;
   }
 }
@@ -260,13 +346,48 @@ canvas#g {
     grid-template-columns: 1fr;
   }
 
-  .side-panel {
-    order: -1;
-  }
-
   canvas#g {
     width: min(100%, calc((100svh - 360px) * 0.5));
     max-height: min(72svh, 640px);
+  }
+
+  .mobile-strip,
+  .mobile-stats {
+    display: grid;
+  }
+
+  .touch-controls {
+    gap: 12px;
+  }
+
+  .side-panel {
+    padding-top: 14px;
+  }
+
+  .stat-grid {
+    display: none;
+  }
+
+  .next-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 110px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title {
+    margin-bottom: 0;
+    align-self: start;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #next {
+    width: 110px;
+  }
+
+  .tips {
+    font-size: 0.9rem;
   }
 }
 
@@ -280,21 +401,54 @@ canvas#g {
   .side-panel,
   .next-panel,
   .info-panel,
-  .stat-card {
+  .stat-card,
+  .mini-stat {
     padding-left: 12px;
     padding-right: 12px;
   }
 
   .button-row button,
-  .touch-controls button {
+  .touch-pad button,
+  .touch-actions button {
     flex: 1 1 calc(50% - 10px);
   }
 
-  .stat-grid {
-    grid-template-columns: 1fr 1fr;
+  .panel-top {
+    gap: 10px;
+  }
+
+  .button-row {
+    width: 100%;
+  }
+
+  .button-row button {
+    flex: 1 1 calc(33.333% - 8px);
+    padding: 10px 12px;
   }
 
   #msg {
     font-size: 0.95rem;
+  }
+
+  canvas#g {
+    width: min(100%, calc((100svh - 330px) * 0.5));
+    max-height: 60svh;
+  }
+
+  .next-panel {
+    grid-template-columns: 1fr 96px;
+  }
+
+  #next {
+    width: 96px;
+  }
+
+  .tips {
+    gap: 6px;
+    font-size: 0.86rem;
+  }
+
+  .tips span {
+    padding: 8px 10px;
   }
 }
