@@ -1,1 +1,82 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tetris Block Puzzle</title><link rel="stylesheet" href="styles.css"></head><body><main class="app"><h1>Tetris Block Puzzle</h1><div class="hud"><span id="stats">Score: 0</span></div><canvas id="g" width="320" height="640"></canvas><p id="msg">Arrow keys move, Up rotates.</p></main><script src="script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Tetris Block Puzzle</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="board-panel">
+        <header class="panel-top">
+          <div>
+            <p class="eyebrow">Arcade Refresh</p>
+            <h1>Tetris Block Puzzle</h1>
+          </div>
+          <div class="button-row">
+            <button id="start-btn" type="button">Start</button>
+            <button id="pause-btn" type="button">Pause</button>
+            <button id="restart-btn" type="button">Restart</button>
+          </div>
+        </header>
+
+        <div class="board-shell">
+          <canvas id="g" width="320" height="640" aria-label="Tetris board"></canvas>
+          <div id="overlay" class="overlay hidden" aria-live="polite">
+            <strong id="overlay-title">Ready?</strong>
+            <span id="overlay-copy">Press Start to drop the first piece.</span>
+          </div>
+        </div>
+
+        <div class="touch-controls" aria-label="Touch controls">
+          <button data-action="left" type="button">Left</button>
+          <button data-action="rotate" type="button">Rotate</button>
+          <button data-action="right" type="button">Right</button>
+          <button data-action="down" type="button">Soft Drop</button>
+          <button data-action="drop" type="button">Hard Drop</button>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="stat-grid">
+          <article class="stat-card">
+            <span class="label">Score</span>
+            <strong id="score">0</strong>
+          </article>
+          <article class="stat-card">
+            <span class="label">Lines</span>
+            <strong id="lines">0</strong>
+          </article>
+          <article class="stat-card">
+            <span class="label">Level</span>
+            <strong id="level">1</strong>
+          </article>
+          <article class="stat-card">
+            <span class="label">Best</span>
+            <strong id="best">0</strong>
+          </article>
+        </section>
+
+        <section class="next-panel">
+          <div class="section-title">
+            <span>Next Piece</span>
+            <span id="speed-label">1.00x</span>
+          </div>
+          <canvas id="next" width="160" height="160" aria-label="Next piece preview"></canvas>
+        </section>
+
+        <section class="info-panel">
+          <p id="msg">Arrow keys move, Up rotates, Space hard drops.</p>
+          <ul>
+            <li>Clear multiple lines for combo scoring.</li>
+            <li>Ghost piece shows the landing position.</li>
+            <li>Touch controls appear on smaller screens.</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
