@@ -21,16 +21,8 @@
           </div>
         </header>
 
-        <div class="board-shell">
-          <canvas id="g" width="320" height="640" aria-label="Tetris board"></canvas>
-          <div id="overlay" class="overlay hidden" aria-live="polite">
-            <strong id="overlay-title">Ready?</strong>
-            <span id="overlay-copy">Press Start to drop the first piece.</span>
-          </div>
-        </div>
-
-        <section class="mobile-strip">
-          <div class="mobile-stats" aria-label="Game stats">
+        <section class="mobile-topbar" aria-label="Mobile play header">
+          <div class="mobile-topstats">
             <article class="mini-stat">
               <span>Score</span>
               <strong id="mobile-score">0</strong>
@@ -48,18 +40,23 @@
               <strong id="mobile-best">0</strong>
             </article>
           </div>
-
-          <div class="touch-controls" aria-label="Touch controls">
-            <div class="touch-pad">
-              <button class="control-move" data-action="left" type="button" aria-label="Move left">Left</button>
-              <button class="control-rotate" data-action="rotate" type="button" aria-label="Rotate piece">Rotate</button>
-              <button class="control-move" data-action="right" type="button" aria-label="Move right">Right</button>
-            </div>
-            <div class="touch-actions">
-              <button class="control-soft" data-action="down" type="button">Soft Drop</button>
-              <button class="control-hard" data-action="drop" type="button">Hard Drop</button>
-            </div>
+          <div class="mobile-topactions">
+            <button id="mobile-pause-btn" type="button">Pause</button>
+            <button id="mobile-exit-btn" type="button">Exit</button>
           </div>
+          <p class="gesture-copy">Swipe left, right, or down. Tap the board to rotate.</p>
+        </section>
+
+        <div class="board-shell">
+          <canvas id="g" width="320" height="640" aria-label="Tetris board"></canvas>
+          <div id="overlay" class="overlay hidden" aria-live="polite">
+            <strong id="overlay-title">Ready?</strong>
+            <span id="overlay-copy">Press Start to drop the first piece.</span>
+          </div>
+        </div>
+
+        <section class="mobile-strip">
+          <p>On phones, Start opens a full-screen play view with swipe controls and tap-to-rotate.</p>
         </section>
       </section>
 
@@ -96,7 +93,7 @@
           <div class="tips">
             <span>Ghost piece shows the landing position.</span>
             <span>Clear multiple lines for combo scoring.</span>
-            <span>Touch controls appear on smaller screens.</span>
+            <span>On phones, swipe the board to move and tap to rotate.</span>
           </div>
         </section>
       </aside>

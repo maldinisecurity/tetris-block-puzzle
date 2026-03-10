@@ -2,6 +2,7 @@ const boardCanvas = document.getElementById("g");
 const boardCtx = boardCanvas.getContext("2d");
 const nextCanvas = document.getElementById("next");
 const nextCtx = nextCanvas.getContext("2d");
+const bodyEl = document.body;
 
 const scoreEl = document.getElementById("score");
 const linesEl = document.getElementById("lines");
@@ -20,6 +21,8 @@ const overlayCopyEl = document.getElementById("overlay-copy");
 const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const restartBtn = document.getElementById("restart-btn");
+const mobilePauseBtn = document.getElementById("mobile-pause-btn");
+const mobileExitBtn = document.getElementById("mobile-exit-btn");
 
 const COLS = 10;
 const ROWS = 20;
@@ -89,7 +92,8 @@ let lastTime = 0;
 let dropElapsed = 0;
 let flashLines = [];
 let flashTimer = 0;
-let touchRepeat = null;
+let hudSnapshot = { score, lines, level, best };
+let activeGesture = null;
 
 bestEl.textContent = String(best);
 mobileBestEl.textContent = String(best);
@@ -217,7 +221,7 @@ function clearLines() {
   flashLines = completed;
   flashTimer = 120;
 
-  for (const rowIndex of completed) {
+  for (const rowIndex of [...completed].sort((a, b) => a - b)) {
     board.splice(rowIndex, 1);
     board.unshift(Array(COLS).fill(null));
   }
@@ -240,15 +244,37 @@ function getDropInterval() {
 }
 
 function syncHud() {
-  scoreEl.textContent = String(score);
-  linesEl.textContent = String(lines);
-  levelEl.textContent = String(level);
-  bestEl.textContent = String(best);
-  mobileScoreEl.textContent = String(score);
-  mobileLinesEl.textContent = String(lines);
-  mobileLevelEl.textContent = String(level);
-  mobileBestEl.textContent = String(best);
+  updateHudValue(scoreEl, score, hudSnapshot.score);
+  updateHudValue(linesEl, lines, hudSnapshot.lines);
+  updateHudValue(levelEl, level, hudSnapshot.level);
+  updateHudValue(bestEl, best, hudSnapshot.best);
+  updateHudValue(mobileScoreEl, score, hudSnapshot.score);
+  updateHudValue(mobileLinesEl, lines, hudSnapshot.lines);
+  updateHudValue(mobileLevelEl, level, hudSnapshot.level);
+  updateHudValue(mobileBestEl, best, hudSnapshot.best);
+  hudSnapshot = { score, lines, level, best };
   speedLabelEl.textContent = `${(BASE_DROP_MS / getDropInterval()).toFixed(2)}x`;
+}
+
+function updateHudValue(element, value, previousValue) {
+  element.textContent = String(value);
+  if (value === previousValue) {
+    return;
+  }
+  element.classList.remove("stat-pop");
+  void element.offsetWidth;
+  element.classList.add("stat-pop");
+  window.setTimeout(() => element.classList.remove("stat-pop"), 180);
+}
+
+function addScore(points) {
+  if (points <= 0) {
+    return;
+  }
+  score += points;
+  best = Math.max(best, score);
+  localStorage.setItem("tetris-best-score", String(best));
+  syncHud();
 }
 
 function setMessage(text) {
@@ -263,6 +289,21 @@ function showOverlay(title, copy) {
 
 function hideOverlay() {
   overlayEl.classList.add("hidden");
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 820px)").matches;
+}
+
+function enterMobilePlayMode() {
+  if (!isMobileViewport()) {
+    return;
+  }
+  bodyEl.classList.add("mobile-play-active");
+}
+
+function exitMobilePlayMode() {
+  bodyEl.classList.remove("mobile-play-active");
 }
 
 function movePiece(direction) {
@@ -281,8 +322,7 @@ function softDrop() {
   }
   if (!collides(active.x, active.y + 1, active.matrix)) {
     active.y += 1;
-    score += 1;
-    syncHud();
+    addScore(1);
     return;
   }
   lockPiece();
@@ -297,13 +337,13 @@ function hardDrop() {
     active.y += 1;
     distance += 1;
   }
-  score += distance * 2;
-  syncHud();
+  addScore(distance * 2);
   lockPiece();
 }
 
 function lockPiece() {
   mergePiece();
+  addScore(Math.max(8, level * 4));
   const cleared = clearLines();
   if (cleared > 0) {
     awardScore(cleared);
@@ -438,6 +478,7 @@ function endGame() {
 }
 
 function startGame() {
+  enterMobilePlayMode();
   if (gameOver) {
     resetGame();
   }
@@ -487,7 +528,7 @@ function resetGame() {
   gameOver = false;
   syncHud();
   setMessage("Fresh board. Press Start.");
-  showOverlay("Ready?", "Press Start to drop the first piece.");
+  showOverlay("Ready?", isMobileViewport() ? "Press Start to open full-screen play." : "Press Start to drop the first piece.");
 }
 
 function handleAction(action) {
@@ -534,33 +575,79 @@ window.addEventListener("keydown", (event) => {
   if (event.key === " " || event.key === "Spacebar") handleAction("drop");
 });
 
-document.querySelectorAll("[data-action]").forEach((button) => {
-  const action = button.dataset.action;
-
-  const startRepeat = (event) => {
-    event.preventDefault();
-    handleAction(action);
-    if (action === "left" || action === "right" || action === "down") {
-      touchRepeat = window.setInterval(() => handleAction(action), 120);
-    }
-  };
-
-  const clearRepeat = () => {
-    if (touchRepeat) {
-      window.clearInterval(touchRepeat);
-      touchRepeat = null;
-    }
-  };
-
-  button.addEventListener("pointerdown", startRepeat);
-  button.addEventListener("pointerup", clearRepeat);
-  button.addEventListener("pointerleave", clearRepeat);
-  button.addEventListener("pointercancel", clearRepeat);
-});
-
 startBtn.addEventListener("click", startGame);
 pauseBtn.addEventListener("click", togglePause);
 restartBtn.addEventListener("click", resetGame);
+mobilePauseBtn.addEventListener("click", togglePause);
+mobileExitBtn.addEventListener("click", () => {
+  if (running && !paused && !gameOver) {
+    togglePause();
+  }
+  exitMobilePlayMode();
+});
+
+boardCanvas.addEventListener("pointerdown", (event) => {
+  if (!bodyEl.classList.contains("mobile-play-active")) {
+    return;
+  }
+  activeGesture = {
+    id: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    lastX: event.clientX,
+    lastY: event.clientY,
+    moved: false,
+  };
+  boardCanvas.setPointerCapture(event.pointerId);
+});
+
+boardCanvas.addEventListener("pointermove", (event) => {
+  if (!activeGesture || activeGesture.id !== event.pointerId || !running || paused || gameOver) {
+    return;
+  }
+
+  const dx = event.clientX - activeGesture.lastX;
+  const totalDx = event.clientX - activeGesture.startX;
+  const totalDy = event.clientY - activeGesture.startY;
+  const threshold = 24;
+
+  if (Math.abs(totalDx) > 8 || Math.abs(totalDy) > 8) {
+    activeGesture.moved = true;
+  }
+
+  if (dx >= threshold) {
+    handleAction("right");
+    activeGesture.lastX = event.clientX;
+  } else if (dx <= -threshold) {
+    handleAction("left");
+    activeGesture.lastX = event.clientX;
+  }
+
+  const dy = event.clientY - activeGesture.lastY;
+  if (dy >= threshold) {
+    handleAction("down");
+    activeGesture.lastY = event.clientY;
+  }
+});
+
+function finishGesture(event) {
+  if (!activeGesture || activeGesture.id !== event.pointerId) {
+    return;
+  }
+  if (!activeGesture.moved && running && !paused && !gameOver) {
+    handleAction("rotate");
+  }
+  activeGesture = null;
+}
+
+boardCanvas.addEventListener("pointerup", finishGesture);
+boardCanvas.addEventListener("pointercancel", finishGesture);
+
+window.addEventListener("resize", () => {
+  if (!isMobileViewport()) {
+    exitMobilePlayMode();
+  }
+});
 
 function tick(timestamp) {
   const delta = timestamp - lastTime;
