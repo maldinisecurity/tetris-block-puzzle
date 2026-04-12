@@ -30,6 +30,10 @@ body {
     radial-gradient(circle at bottom right, rgba(251, 106, 160, 0.25), transparent 24%),
     linear-gradient(145deg, var(--bg), var(--bg2));
   padding: clamp(12px, 2vw, 24px);
+  padding-top: max(clamp(12px, 2vw, 24px), env(safe-area-inset-top));
+  padding-right: max(clamp(12px, 2vw, 24px), env(safe-area-inset-right));
+  padding-bottom: max(clamp(12px, 2vw, 24px), env(safe-area-inset-bottom));
+  padding-left: max(clamp(12px, 2vw, 24px), env(safe-area-inset-left));
 }
 
 .app {
@@ -504,5 +508,38 @@ canvas#g {
   body.mobile-play-active .overlay {
     inset: 10px;
     border-radius: 20px;
+  }
+}
+
+@media (max-width: 430px) {
+  .mobile-topbar {
+    gap: 8px;
+  }
+
+  .mobile-topstats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mobile-topactions {
+    width: 100%;
+  }
+
+  .mobile-topactions button {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .gesture-copy {
+    font-size: 0.84rem;
+  }
+
+  body.mobile-play-active .board-shell {
+    padding: 8px 6px calc(env(safe-area-inset-bottom, 0px) + 8px);
+  }
+
+  body.mobile-play-active canvas#g {
+    height: min(calc(100svh - 196px), calc(100vw * 2 - 16px));
+    max-width: calc(100vw - 12px);
+    border-radius: 16px;
   }
 }
