@@ -84,6 +84,21 @@ h1 {
   line-height: 1;
 }
 
+.version-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 38px;
+  margin-left: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  vertical-align: middle;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: #06111d;
+  background: var(--accent);
+  box-shadow: 0 0 18px rgba(67, 240, 208, 0.32);
+}
+
 .button-row,
 .mobile-topstats,
 .mobile-topactions {
@@ -120,6 +135,12 @@ button:active {
 #pause-btn {
   background: linear-gradient(135deg, #ffe28f, #ffb457);
   box-shadow: 0 12px 24px rgba(255, 180, 87, 0.22);
+}
+
+#hold-btn,
+#mobile-hold-btn {
+  background: linear-gradient(135deg, #c8b7ff, #8ca6ff);
+  box-shadow: 0 12px 24px rgba(140, 166, 255, 0.2);
 }
 
 #restart-btn {
@@ -252,6 +273,7 @@ canvas#g {
 }
 
 .stat-card,
+.hold-panel,
 .next-panel,
 .info-panel {
   border-radius: 18px;
@@ -277,6 +299,7 @@ canvas#g {
   font-size: clamp(1.5rem, 5vw, 2rem);
 }
 
+.hold-panel,
 .next-panel {
   padding: 16px;
 }
@@ -289,13 +312,21 @@ canvas#g {
   margin-bottom: 12px;
 }
 
+#hold,
 #next {
   display: block;
   width: min(100%, 210px);
   margin: 0 auto;
-  aspect-ratio: 1;
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(6, 18, 32, 0.96), rgba(4, 14, 27, 0.96));
+}
+
+#hold {
+  aspect-ratio: 4 / 3;
+}
+
+#next {
+  aspect-ratio: 2 / 3;
 }
 
 .info-panel {
@@ -355,6 +386,7 @@ canvas#g {
     display: none;
   }
 
+  .hold-panel,
   .next-panel {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 110px;
@@ -369,6 +401,7 @@ canvas#g {
     align-items: flex-start;
   }
 
+  #hold,
   #next {
     width: 110px;
   }
@@ -402,7 +435,7 @@ canvas#g {
   }
 
   .button-row button {
-    flex: 1 1 calc(33.333% - 8px);
+    flex: 1 1 calc(50% - 8px);
     padding: 10px 12px;
   }
 
@@ -415,10 +448,12 @@ canvas#g {
     max-height: 60svh;
   }
 
+  .hold-panel,
   .next-panel {
     grid-template-columns: 1fr 96px;
   }
 
+  #hold,
   #next {
     width: 96px;
   }
@@ -485,8 +520,9 @@ canvas#g {
   }
 
   body.mobile-play-active .mobile-topactions button {
-    flex: 1 1 calc(50% - 6px);
+    flex: 1 1 calc(25% - 8px);
     min-width: 0;
+    padding: 10px 8px;
   }
 
   body.mobile-play-active .board-shell {

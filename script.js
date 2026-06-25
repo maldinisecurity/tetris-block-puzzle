@@ -1,5 +1,7 @@
 const boardCanvas = document.getElementById("g");
 const boardCtx = boardCanvas.getContext("2d");
+const holdCanvas = document.getElementById("hold");
+const holdCtx = holdCanvas.getContext("2d");
 const nextCanvas = document.getElementById("next");
 const nextCtx = nextCanvas.getContext("2d");
 const bodyEl = document.body;
@@ -15,14 +17,18 @@ const mobileLevelEl = document.getElementById("mobile-level");
 const mobileBestEl = document.getElementById("mobile-best");
 const msgEl = document.getElementById("msg");
 const speedLabelEl = document.getElementById("speed-label");
+const holdLabelEl = document.getElementById("hold-label");
 const overlayEl = document.getElementById("overlay");
 const overlayTitleEl = document.getElementById("overlay-title");
 const overlayCopyEl = document.getElementById("overlay-copy");
 
 const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
+const holdBtn = document.getElementById("hold-btn");
 const restartBtn = document.getElementById("restart-btn");
 const mobilePauseBtn = document.getElementById("mobile-pause-btn");
+const mobileHoldBtn = document.getElementById("mobile-hold-btn");
+const mobileDropBtn = document.getElementById("mobile-drop-btn");
 const mobileExitBtn = document.getElementById("mobile-exit-btn");
 
 const isEntryMenuOpen = () => document.body.classList.contains("entry-menu-open");
@@ -284,6 +290,8 @@ const COLS = 10;
 const ROWS = 20;
 const BASE_DROP_MS = 700;
 const MIN_DROP_MS = 110;
+const LOCK_DELAY_MS = 420;
+const NEXT_PREVIEW_COUNT = 3;
 const COLORS = {
   I: "#54e8ff",
   O: "#ffd75f",
@@ -337,6 +345,8 @@ const SHAPES = {
 const board = createBoard();
 let queue = [];
 let active = null;
+let holdType = null;
+let holdUsed = false;
 let score = 0;
 let lines = 0;
 let level = 1;
@@ -346,6 +356,7 @@ let gameOver = false;
 let paused = false;
 let lastTime = 0;
 let dropElapsed = 0;
+let lockElapsed = 0;
 let flashLines = [];
 let flashTimer = 0;
 let hudSnapshot = { score, lines, level, best };
@@ -379,22 +390,31 @@ function getBag() {
   return types;
 }
 
-function getNextType() {
-  if (queue.length === 0) {
-    queue = getBag();
+function ensureQueue(size = 1) {
+  while (queue.length < size) {
+    queue.push(...getBag());
   }
+}
+
+function getNextType() {
+  ensureQueue(NEXT_PREVIEW_COUNT + 1);
   return queue.shift();
 }
 
-function spawnPiece() {
-  const type = getNextType();
+function createPiece(type) {
   const matrix = cloneShape(SHAPES[type]);
-  const piece = {
+  return {
     type,
     matrix,
     x: Math.floor((COLS - matrix[0].length) / 2),
     y: -getTopPadding(matrix),
   };
+}
+
+function spawnPiece(type = getNextType()) {
+  const piece = createPiece(type);
+  holdUsed = false;
+  lockElapsed = 0;
   if (collides(piece.x, piece.y, piece.matrix)) {
     endGame();
   }
@@ -445,6 +465,7 @@ function tryRotate() {
     if (!collides(active.x + offset, active.y, rotated)) {
       active.x += offset;
       active.matrix = rotated;
+      resetLockDelay();
       return;
     }
   }
@@ -617,6 +638,7 @@ function movePiece(direction) {
   const nextX = active.x + direction;
   if (!collides(nextX, active.y, active.matrix)) {
     active.x = nextX;
+    resetLockDelay();
   }
 }
 
@@ -626,6 +648,7 @@ function softDrop() {
   }
   if (!collides(active.x, active.y + 1, active.matrix)) {
     active.y += 1;
+    resetLockDelay();
     addScore(1);
     return;
   }
@@ -643,6 +666,28 @@ function hardDrop() {
   }
   addScore(distance * 2);
   lockPiece();
+}
+
+function holdPiece() {
+  if (!running || paused || gameOver || holdUsed) {
+    return;
+  }
+
+  const currentType = active.type;
+  if (holdType) {
+    active = spawnPiece(holdType);
+  } else {
+    active = spawnPiece();
+  }
+  holdType = currentType;
+  holdUsed = true;
+  lockElapsed = 0;
+  syncHud();
+  setMessage("Piece held. Hold refreshes after this piece locks.");
+}
+
+function resetLockDelay() {
+  lockElapsed = 0;
 }
 
 function lockPiece() {
@@ -751,30 +796,71 @@ function drawBoard() {
   }
 }
 
-function drawNext() {
-  resizeCanvasForDisplay(nextCanvas, nextCtx, 160, 160);
-  nextCtx.clearRect(0, 0, 160, 160);
-  nextCtx.fillStyle = "#071220";
-  nextCtx.fillRect(0, 0, 160, 160);
-
-  const nextType = queue[0] || getNextType();
-  if (!queue[0]) {
-    queue.unshift(nextType);
+function drawPreviewPiece(ctx, type, bounds, alpha = 1) {
+  if (!type) {
+    ctx.save();
+    ctx.fillStyle = "rgba(140, 164, 196, 0.55)";
+    ctx.font = "700 16px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("EMPTY", bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    ctx.restore();
+    return;
   }
-  const matrix = SHAPES[nextType];
-  const size = 28;
-  const width = matrix[0].length * size;
-  const height = matrix.length * size;
-  const offsetX = (160 - width) / 2;
-  const offsetY = (160 - height) / 2;
 
-  for (let row = 0; row < matrix.length; row += 1) {
-    for (let col = 0; col < matrix[row].length; col += 1) {
+  const matrix = SHAPES[type];
+  const filledRows = matrix
+    .map((row, index) => (row.some(Boolean) ? index : -1))
+    .filter((index) => index >= 0);
+  const top = Math.min(...filledRows);
+  const bottom = Math.max(...filledRows);
+  const filledCols = matrix[0]
+    .map((_, index) => (matrix.some((row) => row[index]) ? index : -1))
+    .filter((index) => index >= 0);
+  const left = Math.min(...filledCols);
+  const right = Math.max(...filledCols);
+  const shapeWidth = right - left + 1;
+  const shapeHeight = bottom - top + 1;
+  const size = Math.min(30, Math.floor(Math.min(bounds.width / shapeWidth, bounds.height / shapeHeight) * 0.72));
+  const offsetX = bounds.x + (bounds.width - shapeWidth * size) / 2;
+  const offsetY = bounds.y + (bounds.height - shapeHeight * size) / 2;
+
+  for (let row = top; row <= bottom; row += 1) {
+    for (let col = left; col <= right; col += 1) {
       if (!matrix[row][col]) {
         continue;
       }
-      drawCell(nextCtx, offsetX + col * size, offsetY + row * size, size, COLORS[nextType], 1);
+      drawCell(ctx, offsetX + (col - left) * size, offsetY + (row - top) * size, size, COLORS[type], alpha);
     }
+  }
+}
+
+function drawHold() {
+  resizeCanvasForDisplay(holdCanvas, holdCtx, 160, 120);
+  holdCtx.clearRect(0, 0, 160, 120);
+  holdCtx.fillStyle = "#071220";
+  holdCtx.fillRect(0, 0, 160, 120);
+  drawPreviewPiece(holdCtx, holdType, { x: 14, y: 12, width: 132, height: 96 }, holdUsed ? 0.45 : 1);
+  holdLabelEl.textContent = holdType ? (holdUsed ? "Locked" : "Ready") : "Empty";
+}
+
+function drawNext() {
+  ensureQueue(NEXT_PREVIEW_COUNT);
+  resizeCanvasForDisplay(nextCanvas, nextCtx, 160, 240);
+  nextCtx.clearRect(0, 0, 160, 240);
+  nextCtx.fillStyle = "#071220";
+  nextCtx.fillRect(0, 0, 160, 240);
+
+  for (let index = 0; index < NEXT_PREVIEW_COUNT; index += 1) {
+    const top = index * 80;
+    if (index > 0) {
+      nextCtx.strokeStyle = "rgba(191, 219, 254, 0.1)";
+      nextCtx.beginPath();
+      nextCtx.moveTo(16, top);
+      nextCtx.lineTo(144, top);
+      nextCtx.stroke();
+    }
+    drawPreviewPiece(nextCtx, queue[index], { x: 16, y: top + 8, width: 128, height: 64 }, index === 0 ? 1 : 0.7);
   }
 }
 
@@ -824,14 +910,18 @@ function togglePause() {
 
 function resetGame() {
   resetBoard();
-  queue = getBag();
+  queue = [];
+  ensureQueue(NEXT_PREVIEW_COUNT + 1);
   active = spawnPiece();
+  holdType = null;
+  holdUsed = false;
   score = 0;
   lines = 0;
   level = 1;
   lineCombo = -1;
   backToBackTetris = false;
   dropElapsed = 0;
+  lockElapsed = 0;
   flashLines = [];
   flashTimer = 0;
   paused = false;
@@ -859,6 +949,9 @@ function handleAction(action) {
     case "drop":
       hardDrop();
       break;
+    case "hold":
+      holdPiece();
+      break;
     default:
       break;
   }
@@ -871,7 +964,7 @@ window.addEventListener("keydown", (event) => {
   if (event.repeat && !["ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
     return;
   }
-  if (["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "Spacebar"].includes(event.key)) {
+  if (["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "Spacebar", "Shift"].includes(event.key)) {
     event.preventDefault();
   }
   if (event.key === "Enter") {
@@ -887,12 +980,16 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowDown") handleAction("down");
   if (event.key === "ArrowUp" || event.key === "x" || event.key === "X") handleAction("rotate");
   if (event.key === " " || event.key === "Spacebar") handleAction("drop");
+  if (event.key === "c" || event.key === "C" || event.key === "Shift") handleAction("hold");
 });
 
 startBtn.addEventListener("click", startGame);
 pauseBtn.addEventListener("click", togglePause);
+holdBtn.addEventListener("click", () => handleAction("hold"));
 restartBtn.addEventListener("click", resetGame);
 mobilePauseBtn.addEventListener("click", togglePause);
+mobileHoldBtn.addEventListener("click", () => handleAction("hold"));
+mobileDropBtn.addEventListener("click", () => handleAction("drop"));
 mobileExitBtn.addEventListener("click", () => {
   if (running && !paused && !gameOver) {
     togglePause();
@@ -974,14 +1071,23 @@ function tick(timestamp) {
   lastTime = timestamp;
 
   if (running && !paused && !gameOver) {
-    dropElapsed += delta;
-    if (dropElapsed >= getDropInterval()) {
-      if (!collides(active.x, active.y + 1, active.matrix)) {
-        active.y += 1;
-      } else {
+    const isGrounded = collides(active.x, active.y + 1, active.matrix);
+    if (isGrounded) {
+      dropElapsed = 0;
+      lockElapsed += delta;
+      if (lockElapsed >= LOCK_DELAY_MS) {
         lockPiece();
       }
-      dropElapsed = 0;
+    } else {
+      lockElapsed = 0;
+      dropElapsed += delta;
+      if (dropElapsed >= getDropInterval()) {
+        active.y += 1;
+        dropElapsed = 0;
+        if (collides(active.x, active.y + 1, active.matrix)) {
+          lockElapsed = 0;
+        }
+      }
     }
   }
 
@@ -993,6 +1099,7 @@ function tick(timestamp) {
   }
 
   drawBoard();
+  drawHold();
   drawNext();
   requestAnimationFrame(tick);
 }
@@ -1000,13 +1107,14 @@ function tick(timestamp) {
 syncHud();
 resetGame();
 createEntryMenu({
-  title: "Tetris Block Puzzle",
+  title: "Tetris Block Puzzle V2",
   kicker: "Arcade Refresh",
-  description: "Drop into a fresh stack, control space carefully, and chase cleaner line clears before the pace rises.",
+  description: "Plan with the queue, bank a piece in Hold, and use the lock window to clean up tighter stacks before the pace rises.",
   tutorial: [
-    "Use Left and Right to move, Up to rotate, Down to soft-drop, and Space to hard-drop.",
-    "On phones, swipe the board left, right, or down, then tap to rotate the active piece.",
-    "Clear lines to score, level up, and speed the game up. The ghost piece shows where the piece will land.",
+    "Use Left and Right to move, Up to rotate, Down to soft-drop, Space to hard-drop, and C or Shift to hold.",
+    "On phones, swipe the board left, right, or down, tap to rotate, then use the Hold and Drop buttons for fast decisions.",
+    "Clear lines to score, level up, and speed the game up. The ghost piece and queue help you plan several moves ahead.",
+    "A short lock delay lets you slide or rotate grounded pieces before they settle.",
     "If the stack reaches the ceiling, the run ends immediately.",
   ],
   onStart: () => {

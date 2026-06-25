@@ -12,11 +12,12 @@
         <header class="panel-top">
           <div>
             <p class="eyebrow">Arcade Refresh</p>
-            <h1>Tetris Block Puzzle</h1>
+            <h1>Tetris Block Puzzle <span class="version-badge">V2</span></h1>
           </div>
           <div class="button-row">
             <button id="start-btn" type="button">Start</button>
             <button id="pause-btn" type="button">Pause</button>
+            <button id="hold-btn" type="button">Hold</button>
             <button id="restart-btn" type="button">Restart</button>
           </div>
         </header>
@@ -42,9 +43,11 @@
           </div>
           <div class="mobile-topactions">
             <button id="mobile-pause-btn" type="button">Pause</button>
+            <button id="mobile-hold-btn" type="button">Hold</button>
+            <button id="mobile-drop-btn" type="button">Drop</button>
             <button id="mobile-exit-btn" type="button">Exit</button>
           </div>
-          <p class="gesture-copy">Swipe left, right, or down. Tap the board to rotate.</p>
+          <p class="gesture-copy">Swipe left, right, or down. Tap to rotate. Use Hold or Drop for faster play.</p>
         </section>
 
         <div class="board-shell">
@@ -80,18 +83,27 @@
           </article>
         </section>
 
+        <section class="hold-panel">
+          <div class="section-title">
+            <span>Hold</span>
+            <span id="hold-label">Empty</span>
+          </div>
+          <canvas id="hold" width="160" height="120" aria-label="Held piece preview"></canvas>
+        </section>
+
         <section class="next-panel">
           <div class="section-title">
-            <span>Next Piece</span>
+            <span>Queue</span>
             <span id="speed-label">1.00x</span>
           </div>
-          <canvas id="next" width="160" height="160" aria-label="Next piece preview"></canvas>
+          <canvas id="next" width="160" height="240" aria-label="Next pieces preview"></canvas>
         </section>
 
         <section class="info-panel">
-          <p id="msg">Arrow keys move, Up rotates, Space hard drops.</p>
+          <p id="msg">Arrow keys move, Up rotates, Space hard drops, C holds.</p>
           <div class="tips">
             <span>Ghost piece shows the landing position.</span>
+            <span>Hold stores one piece, once per drop.</span>
             <span>Clear multiple lines for combo scoring.</span>
             <span>On phones, swipe the board to move and tap to rotate.</span>
           </div>
