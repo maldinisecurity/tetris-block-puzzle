@@ -350,6 +350,8 @@ let flashLines = [];
 let flashTimer = 0;
 let hudSnapshot = { score, lines, level, best };
 let activeGesture = null;
+let lineCombo = -1;
+let backToBackTetris = false;
 
 bestEl.textContent = String(best);
 mobileBestEl.textContent = String(best);
@@ -487,7 +489,9 @@ function clearLines() {
 
 function awardScore(cleared) {
   const lineScores = [0, 100, 300, 500, 800];
-  score += lineScores[cleared] * level;
+  const comboBonus = lineCombo > 0 ? lineCombo * 55 * level : 0;
+  const backToBackBonus = cleared === 4 && backToBackTetris ? 420 * level : 0;
+  score += lineScores[cleared] * level + comboBonus + backToBackBonus;
   lines += cleared;
   level = Math.max(1, Math.floor(lines / 10) + 1);
   best = Math.max(best, score);
@@ -646,9 +650,14 @@ function lockPiece() {
   addScore(Math.max(8, level * 4));
   const cleared = clearLines();
   if (cleared > 0) {
+    lineCombo += 1;
     awardScore(cleared);
-    setMessage(cleared === 4 ? "Tetris! Clean four-line stack." : `${cleared} line${cleared > 1 ? "s" : ""} cleared.`);
+    const comboCopy = lineCombo > 0 ? ` Combo x${lineCombo + 1}.` : "";
+    const b2bCopy = cleared === 4 && backToBackTetris ? " Back-to-back bonus." : "";
+    setMessage(cleared === 4 ? `Tetris! Clean four-line stack.${b2bCopy}${comboCopy}` : `${cleared} line${cleared > 1 ? "s" : ""} cleared.${comboCopy}`);
+    backToBackTetris = cleared === 4;
   } else {
+    lineCombo = -1;
     setMessage("Stack clean. Keep the well open.");
   }
   active = spawnPiece();
@@ -820,6 +829,8 @@ function resetGame() {
   score = 0;
   lines = 0;
   level = 1;
+  lineCombo = -1;
+  backToBackTetris = false;
   dropElapsed = 0;
   flashLines = [];
   flashTimer = 0;

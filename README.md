@@ -10,6 +10,8 @@ Responsive Tetris-style arcade game built with vanilla HTML, CSS, and JavaScript
 - Level, line, score, and best-score tracking
 - Soft drop and hard drop scoring
 - Touch controls for smaller screens
+- Consecutive line-clear combo bonuses
+- Back-to-back Tetris scoring bonus
 
 ## Controls
 
